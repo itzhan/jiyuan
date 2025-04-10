@@ -2,16 +2,7 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
-const cloud = require("wx-server-sdk");
-const xml2js = require("xml2js");
 const { init: initDB, Counter } = require("./db");
-
-
-const WX_CLOUD_ENV = "cloud1-9g0ddevqa589d711"
-// 初始化云开发
-cloud.init({
-  env: WX_CLOUD_ENV,
-});
 
 const logger = morgan("tiny");
 
@@ -55,55 +46,6 @@ app.get("/api/count", async (req, res) => {
 app.get("/api/wx_openid", async (req, res) => {
   if (req.headers["x-wx-source"]) {
     res.send(req.headers["x-wx-openid"]);
-  }
-});
-
-// 处理微信公众号事件推送
-app.post("/wx/event", express.text(), async (req, res) => {
-  try {
-    // 解析XML消息
-    const result = await new Promise((resolve, reject) => {
-      xml2js.parseString(req.body, { trim: true }, (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
-
-    const message = result.xml;
-    const event = message.Event?.[0];
-    const fromUserName = message.FromUserName?.[0];
-
-    if (event === "subscribe" || event === "unsubscribe") {
-      // 获取用户信息
-      const wxContext = cloud.getWXContext();
-      const db = cloud.database();
-
-      // 根据unionId查找用户
-      const user = await db
-        .collection("users")
-        .where({
-          unionId: wxContext.UNIONID,
-        })
-        .get();
-
-      if (user.data.length > 0) {
-        // 更新用户的公众号openId
-        await db
-          .collection("users")
-          .doc(user.data[0]._id)
-          .update({
-            data: {
-              officialAccountOpenId:
-                event === "subscribe" ? fromUserName : null,
-            },
-          });
-      }
-    }
-
-    res.send("success");
-  } catch (error) {
-    console.error("处理公众号事件出错：", error);
-    res.status(500).send("error");
   }
 });
 
