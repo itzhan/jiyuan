@@ -23,15 +23,6 @@ process.on("uncaughtException", (err) => {
 // 获取公众号 access_token
 async function getAccessToken(appid, secret) {
   try {
-    // 方法一：尝试使用微信云SDK获取token
-    try {
-      const { token } = await cloud.openapi.authorizer.getAccessToken();
-      if (token) return token;
-    } catch (cloudError) {
-      console.log("云SDK获取token失败，尝试使用API方式：", cloudError);
-    }
-
-    // 方法二：使用API方式获取
     const https = require("https");
     const res = await axios.get(`https://api.weixin.qq.com/cgi-bin/token`, {
       httpsAgent: new https.Agent({
@@ -53,17 +44,6 @@ async function getAccessToken(appid, secret) {
 // 获取用户的 OpenId 信息
 async function getUserInfo(access_token, openid) {
   try {
-    // 方法一：尝试使用微信云SDK获取用户信息
-    try {
-      const result = await cloud.openapi.wxaapi.getUserInfo({
-        openid,
-      });
-      if (result) return result;
-    } catch (cloudError) {
-      console.log("云SDK获取用户信息失败，尝试使用API方式：", cloudError);
-    }
-
-    // 方法二：使用API方式获取
     const https = require("https");
     const res = await axios.get(`https://api.weixin.qq.com/cgi-bin/user/info`, {
       httpsAgent: new https.Agent({
