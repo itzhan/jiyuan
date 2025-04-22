@@ -1,14 +1,14 @@
 const express = require("express");
 const axios = require("axios");
-const cloud = require("wx-server-sdk");
+const cloudbase = require("@cloudbase/node-sdk");
+const https = require("https");
 
-cloud.init({
-  env: process.env.CLOUD_ENV,
-  secretId: process.env.TENCENT_SECRET_ID,
-  secretKey: process.env.TENCENT_SECRET_KEY,
+const cloudbase = cloudbase.init({
+  env: process.env.CLOUD_ENV 
 });
+const db = cloudbase.database();
 
-const db = cloud.database();
+
 const app = express();
 app.use(express.json());
 
@@ -23,7 +23,6 @@ process.on("uncaughtException", (err) => {
 // 获取公众号 access_token
 async function getAccessToken(appid, secret) {
   try {
-    const https = require("https");
     const res = await axios.get(`https://api.weixin.qq.com/cgi-bin/token`, {
       httpsAgent: new https.Agent({
         rejectUnauthorized: false,
@@ -44,7 +43,6 @@ async function getAccessToken(appid, secret) {
 // 获取用户的 OpenId 信息
 async function getUserInfo(access_token, openid) {
   try {
-    const https = require("https");
     const res = await axios.get(`https://api.weixin.qq.com/cgi-bin/user/info`, {
       httpsAgent: new https.Agent({
         rejectUnauthorized: false,
