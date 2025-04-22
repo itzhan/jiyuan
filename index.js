@@ -40,7 +40,7 @@ app.post('/', async (req, res) => {
     const user = await db.collection('users').where({
       unionid: userInfo.unionid
     }).get()
-    console.log('user:', user)
+    console.log('user1:', user)
 
     if (user.data.length > 0) {
       await db
