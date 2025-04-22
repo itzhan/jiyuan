@@ -1,7 +1,6 @@
 const express = require("express");
 const axios = require("axios");
 const tcb = require("@cloudbase/node-sdk");
-const https = require("https");
 
 console.log("程序启动，加载模块完成");
 console.log("环境变量CLOUD_ENV:", process.env.CLOUD_ENV);
@@ -27,58 +26,18 @@ process.on("uncaughtException", (err) => {
 });
 console.log("全局异常处理已设置");
 
-// 获取公众号 access_token
-async function getAccessToken(appid, secret) {
-  console.log(
-    `开始获取access_token，appid: ${appid}, secret: ${
-      secret ? "已提供" : "未提供"
-    }`
-  );
+// 获取公众号用户信息
+async function getUserInfo(openid) {
+  console.log(`开始获取用户信息，openid: ${openid}`);
   try {
-    const url = `https://api.weixin.qq.com/cgi-bin/token`;
+    const url = `http://api.weixin.qq.com/cgi-bin/user/info`;
     console.log(`请求URL: ${url}`);
 
     const res = await axios.get(url, {
-      httpsAgent: new https.Agent({
-        rejectUnauthorized: false,
-      }),
       params: {
-        grant_type: "client_credential",
-        appid,
-        secret,
-      },
-    });
-    console.log("获取access_token成功:", res.data);
-    return res.data.access_token;
-  } catch (error) {
-    console.error("获取access_token出错，详细信息:", error.message);
-    if (error.response) {
-      console.error("响应状态:", error.response.status);
-      console.error("响应数据:", error.response.data);
-    }
-    return null;
-  }
-}
-
-// 获取用户的 OpenId 信息
-async function getUserInfo(access_token, openid) {
-  console.log(
-    `开始获取用户信息，access_token: ${
-      access_token ? "已提供" : "未提供"
-    }, openid: ${openid}`
-  );
-  try {
-    const url = `https://api.weixin.qq.com/cgi-bin/user/info`;
-    console.log(`请求URL: ${url}`);
-
-    const res = await axios.get(url, {
-      httpsAgent: new https.Agent({
-        rejectUnauthorized: false,
-      }),
-      params: {
-        access_token,
         openid,
         lang: "zh_CN",
+        from_appid: process.env.APPID  // 公众号的 appid
       },
     });
     console.log("获取用户信息成功:", res.data);
@@ -93,7 +52,7 @@ async function getUserInfo(access_token, openid) {
   }
 }
 
-// 监听微信事件推送
+// 修改主路由处理
 app.post("/", async (req, res) => {
   console.log("收到POST请求，请求体:", JSON.stringify(req.body));
   const { Event, FromUserName } = req.body;
@@ -101,20 +60,9 @@ app.post("/", async (req, res) => {
 
   if (Event === "unsubscribe" || Event === "subscribe") {
     console.log(`处理${Event}事件`);
-    const APPID = process.env.APPID;
-    const APPSECRET = process.env.APPSECRET;
-    console.log(
-      `环境变量APPID: ${APPID}, APPSECRET: ${APPSECRET ? "已提供" : "未提供"}`
-    );
-
-    const access_token = await getAccessToken(APPID, APPSECRET);
-    if (!access_token) {
-      console.log("获取access_token失败，返回failed");
-      return res.send("failed");
-    }
-
-    console.log(`成功获取access_token: ${access_token}`);
-    const userInfo = await getUserInfo(access_token, FromUserName);
+    
+    // 直接获取用户信息，不需要先获取 access_token
+    const userInfo = await getUserInfo(FromUserName);
     if (!userInfo || !userInfo.unionid) {
       console.log("获取用户信息失败或无unionid，返回failed");
       return res.send("failed");
