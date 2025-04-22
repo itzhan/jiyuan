@@ -9,7 +9,7 @@ const app = express()
 app.use(express.json())
 
 app.post('/', async (req, res) => {
-  if (req.body.type === 'unsubscribe' || req.body.type === 'subscribe') {
+  if (req.body.Event === 'unsubscribe' || req.body.Event === 'subscribe') {
     const wxContext = cloud.getWXContext()
     console.log('wxContext', wxContext)
 
