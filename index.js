@@ -2,9 +2,6 @@ const express = require('express')
 const axios = require('axios');
 const cloud = require('wx-server-sdk');
 
-// 忽略 HTTPS 自签名证书错误（仅限云托管内部调用微信 API）
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
 cloud.init({
   env: process.env.CLOUD_ENV,
   secretId: process.env.TENCENT_SECRET_ID,
@@ -59,7 +56,6 @@ async function getUserInfo(access_token, openid) {
 
 // 监听微信事件推送
 app.post('/', async (req, res) => {
-  console.log('接收到事件:', req.body)
   const { Event, FromUserName } = req.body;
 
   if (Event === 'unsubscribe' || Event === 'subscribe') {
