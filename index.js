@@ -3,10 +3,10 @@ const axios = require("axios");
 const cloudbase = require("@cloudbase/node-sdk");
 const https = require("https");
 
-const cloudbase = cloudbase.init({
+const cloud = cloudbase.init({
   env: process.env.CLOUD_ENV 
 });
-const db = cloudbase.database();
+const db = cloud.database();
 
 
 const app = express();
