@@ -17,7 +17,7 @@ app.use(express.json())
 
 // 全局异常捕获，防止 Node 崩溃
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('未处理的 Promise 异常:', reason);
+  console.error('未处理的Promise 异常:', reason);
 });
 process.on('uncaughtException', (err) => {
   console.error('未捕获异常:', err);
