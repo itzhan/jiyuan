@@ -28,6 +28,7 @@ async function getUserInfo(access_token, openid) {
 
 // 监听微信事件推送
 app.post('/', async (req, res) => {
+  console.log(req.body)
   const { Event, FromUserName} = req.body
 
   if (Event === 'unsubscribe' || Event === 'subscribe') {
