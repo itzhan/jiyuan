@@ -1,4 +1,4 @@
-FROM node:12-slim
+FROM node:18-slim
 
 WORKDIR /usr/src/app
 
@@ -8,4 +8,4 @@ RUN npm install
 
 COPY . ./
 
-CMD [ "node", "index.js"]
+CMD ["npm", "start"]

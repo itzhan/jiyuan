@@ -9,8 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.16.4",
-    "wx-server-sdk": "^0.4.0",
-    "node-fetch": "^2.6.1"
+    "express": "^4.18.2",
+    "wx-server-sdk": "^1.10.0",
+    "axios": "^1.6.7"
   }
 }
