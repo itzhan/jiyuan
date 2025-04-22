@@ -3,11 +3,12 @@ const fetch = require('node-fetch');
 const tcb = require('tcb-admin-node');
 
 tcb.init({
-  env: process.env.CLOUD_ENV
+  env: process.env.CLOUD_ENV,
+  secretId: process.env.TENCENT_SECRET_ID,
+  secretKey: process.env.TENCENT_SECRET_KEY
 })
-const db = tcb.database()
-console.log('db', db.collection('users').get())
 
+const db = tcb.database()
 const app = express()
 app.use(express.json())
 
