@@ -1,14 +1,14 @@
 const express = require('express')
 const fetch = require('node-fetch');
-const tcb = require('tcb-admin-node');
+const cloud = require('wx-server-sdk');
 
-tcb.init({
+cloud.init({
   env: process.env.CLOUD_ENV,
   secretId: process.env.TENCENT_SECRET_ID,
   secretKey: process.env.TENCENT_SECRET_KEY
 })
 
-const db = tcb.database()
+const db = cloud.database()
 const app = express()
 app.use(express.json())
 
