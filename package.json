@@ -3,11 +3,18 @@
   "version": "1.0.0",
   "description": "call push server",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "start": "node index.js"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^4.16.4",
-    "wx-server-sdk": "^0.4.0"
+    "wx-server-sdk": "^0.4.0",
+    "tcb-admin-node": "^0.1.1",
+    "node-fetch": "^2.6.1"
+  },
+  "engines": {
+    "node": ">=12.0.0"
   }
 }

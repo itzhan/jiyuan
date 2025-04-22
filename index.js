@@ -1,21 +1,42 @@
 const express = require('express')
-const cloud = require("wx-server-sdk");
+const fetch = require('node-fetch');
+const tcb = require('tcb-admin-node');
 
-cloud.init({
-  env: 'cloud1-9g0ddevqa589d711'
+tcb.init({
+  env: process.env.CLOUD_ENV
 })
+const db = tcb.database()
+console.log('db', db.collection('users').get())
 
 const app = express()
 app.use(express.json())
 
-app.post('/', async (req, res) => {
-  if (req.body.Event === 'unsubscribe' || req.body.Event === 'subscribe') {
-    const wxContext = cloud.getWXContext()
-    console.log('wxContext', wxContext)
+// 获取公众号 access_token
+async function getAccessToken(appid, secret) {
+  const res = await fetch(`https://api.weixin.qq.com/cgi-bin/stable_token?grant_type=client_credential&appid=${appid}&secret=${secret}`);
+  const json = await res.json();
+  return json.access_token;
+}
+// 获取用户的OpenId信息
+async function getUserInfo(access_token, openid) {
+  const res = await fetch(`https://api.weixin.qq.com/cgi-bin/user/info?access_token=${access_token}&openid=${openid}&lang=zh_CN`);
+  const json = await res.json();
+  return json;
+}
 
-    const db = cloud.database()
+
+// 监听微信事件推送
+app.post('/', async (req, res) => {
+  const { Event, FromUserName} = req.body
+
+  if (Event === 'unsubscribe' || Event === 'subscribe') {
+    const APPID = process.env.APPID
+    const APPSECRET = process.env.APPSECRET
+    const access_token = await getAccessToken(APPID, APPSECRET)
+    const userInfo = await getUserInfo(access_token, FromUserName)
+    
     const user = await db.collection('users').where({
-      openid: wxContext.OPENID
+      unionid: userInfo.unionid
     }).get()
     console.log('user', user)
 
@@ -26,13 +47,13 @@ app.post('/', async (req, res) => {
       .update({
         data: {
           gzhOpenId:
-            req.body.type === "subscribe" ? req.body.FromUserName : null,
+            Event === "subscribe" ? userInfo.openid : null,
         },
       });
     }
   }
 
-  res.send('success') // 不进行任何回复，直接返回success，告知微信服务器已经正常收到。
+  res.send('success') 
 });
 
 app.listen(80, function(){
