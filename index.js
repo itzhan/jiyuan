@@ -2,24 +2,16 @@ const express = require("express");
 const axios = require("axios");
 const tcb = require("@cloudbase/node-sdk");
 
-console.log("程序启动，加载模块完成");
-console.log("环境变量CLOUD_ENV:", process.env.CLOUD_ENV);
-
 const cloud = tcb.init({
   env: process.env.CLOUD_ENV,
   // 添加腾讯云认证信息
   secretId: process.env.TENCENTCLOUD_SECRET_ID,
-  secretKey: process.env.TENCENTCLOUD_SECRET_KEY
+  secretKey: process.env.TENCENTCLOUD_SECRET_KEY,
 });
-console.log("云环境初始化完成");
-
 const db = cloud.database();
-console.log("数据库连接初始化完成");
 
 const app = express();
 app.use(express.json());
-console.log("Express应用初始化完成");
-
 // 全局异常捕获，防止 Node 崩溃
 process.on("unhandledRejection", (reason, promise) => {
   console.error("未处理的Promise 异常:", reason);
@@ -27,20 +19,18 @@ process.on("unhandledRejection", (reason, promise) => {
 process.on("uncaughtException", (err) => {
   console.error("未捕获异常:", err);
 });
-console.log("全局异常处理已设置");
 
 // 获取公众号用户信息
 async function getUserInfo(openid) {
   console.log(`开始获取用户信息，openid: ${openid}`);
   try {
     const url = `http://api.weixin.qq.com/cgi-bin/user/info`;
-    console.log(`请求URL: ${url}`);
 
     const res = await axios.get(url, {
       params: {
         openid,
         lang: "zh_CN",
-        from_appid: process.env.APPID  // 公众号的 appid
+        from_appid: process.env.APPID, // 公众号的 appid
       },
     });
     console.log("获取用户信息成功:", res.data);
@@ -59,63 +49,103 @@ async function getUserInfo(openid) {
 app.post("/", async (req, res) => {
   console.log("收到POST请求，请求体:", JSON.stringify(req.body));
   const { Event, FromUserName } = req.body;
-  console.log(`事件类型: ${Event}, 来源用户: ${FromUserName}`);
 
-  if (Event === "unsubscribe" || Event === "subscribe") {
-    console.log(`处理${Event}事件`);
-    
-    // 直接获取用户信息，不需要先获取 access_token(云托管优势)
-    const userInfo = await getUserInfo(FromUserName);
-    if (!userInfo) {
-      console.error("获取用户信息失败，无法继续处理");
-      res.send("获取用户信息失败");
-      return;
-    }
-    console.log(`成功获取用户信息: ${JSON.stringify(userInfo)}`);
-    console.log(`开始查询数据库中的用户，unionid: ${userInfo.unionid}`);
+  // 关注或取关事件处理
+  if (Event === "subscribe" || Event === "unsubscribe") {
+    console.log(`处理${Event}事件，用户OpenID: ${FromUserName}`);
 
     try {
-      let user = null;
-      if (userInfo.unionid) {
-        // 关注事件
-        console.log(`开始查询数据库中的用户，unionid: ${userInfo.unionid}`);
-        user = await db
-         .collection("users")
-         .where({
-            unionid: userInfo.unionid,
-          })
-         .get();
-      } else {
-        // 取关事件
-        console.log(`开始查询数据库中的用户，openid: ${userInfo.openid}`);
-        user = await db
-        .collection("users")
-        .where({
-            gzhOpenId: userInfo.openid,
-          })
-        .get();
-      }
-      console.log("查询用户结果:", JSON.stringify(user));
+      // 获取用户信息
+      const userInfo = await getUserInfo(FromUserName);
+      console.log("获取到的用户信息:", userInfo);
 
-      if (user.data && user.data.length > 0) {
-        console.log(`找到用户，ID: ${user.data[0]._id}，开始更新gzhOpenId`);
-        const updateResult = await db
-          .collection("users")
-          .doc(user.data[0]._id)
-          .update({
-            data: {
-              gzhOpenId: Event === "subscribe" ? userInfo.openid : null,
-            },
-          });
-        console.log("更新用户结果:", JSON.stringify(updateResult));
-      } else {
-        console.log("未找到匹配的用户记录");
+      if (Event === "subscribe") {
+        // 关注事件处理
+        if (userInfo && userInfo.unionid) {
+          console.log(`关注事件: 获取到unionid: ${userInfo.unionid}`);
+
+          // 查询用户是否存在
+          const userQueryResult = await db
+            .collection("gzhOpenId")
+            .where({ unionid: userInfo.unionid })
+            .get();
+
+          console.log("查询用户结果:", JSON.stringify(userQueryResult));
+
+          if (userQueryResult.data && userQueryResult.data.length > 0) {
+            // 用户存在，更新gzhOpenId和isActive
+            const userData = userQueryResult.data[0];
+            console.log(
+              `找到用户记录，ID: ${userData._id}，更新gzhOpenId和isActive`
+            );
+
+            const updateResult = await db
+              .collection("gzhOpenId")
+              .doc(userData._id)
+              .update({
+                data: {
+                  gzhOpenId: FromUserName,
+                  isActive: true,
+                  updatedAt: db.serverDate(),
+                },
+              });
+
+            console.log("更新用户结果:", JSON.stringify(updateResult));
+          } else {
+            // 用户不存在，可以选择创建新用户或其他处理方式
+            console.log("没有找到匹配的用户记录，可能需要创建新用户");
+
+            const createResult = await db.collection("gzhOpenId").add({
+              data: {
+                unionid: userInfo.unionid,
+                gzhOpenId: FromUserName,
+                isActive: true,
+              }
+            });
+            console.log("创建新用户结果:", JSON.stringify(createResult));
+          }
+        } else {
+          console.log("关注事件: 未获取到unionid");
+        }
+      } else if (Event === "unsubscribe") {
+        // 取关事件处理
+        console.log(`取关事件: 处理用户OpenID: ${FromUserName}`);
+
+        // 由于取关时可能无法获取unionid，直接通过gzhOpenId查找用户
+        const userQueryResult = await db
+          .collection("gzhOpenId")
+          .where({ gzhOpenId: FromUserName })
+          .get();
+
+        console.log(
+          "根据gzhOpenId查询用户结果:",
+          JSON.stringify(userQueryResult)
+        );
+
+        if (userQueryResult.data && userQueryResult.data.length > 0) {
+          // 找到用户，更新isActive为false
+          const userData = userQueryResult.data[0];
+          console.log(`找到用户记录，ID: ${userData._id}，设置isActive为false`);
+
+          const updateResult = await db
+            .collection("gzhOpenId")
+            .doc(userData._id)
+            .update({
+              data: {
+                isActive: false,
+              },
+            });
+
+          console.log("更新用户状态结果:", JSON.stringify(updateResult));
+        } else {
+          console.log("没有找到匹配的用户记录，无法更新状态");
+        }
       }
-    } catch (dbError) {
-      console.error("数据库操作失败:", dbError);
+    } catch (error) {
+      console.error("处理事件出错:", error);
     }
   } else {
-    console.log(`跳过非关注/取关事件: ${Event}`);
+    console.log(`收到非关注/取关事件: ${Event}，不处理`);
   }
 
   console.log("处理完成，返回success");
