@@ -162,7 +162,8 @@ app.post("/sendTemplateMessage", async (req, res) => {
     });
 
     console.log("发送模版消息成功:", res.data);
-    res.send("success");
+    // 告诉调用者发送成功
+    res.status(200).send(res.data); 
   }
   catch (error) {
     console.error("发送模版消息失败，详细信息:", error.message);
