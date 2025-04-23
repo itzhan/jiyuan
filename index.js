@@ -154,7 +154,7 @@ app.post("/sendTemplateMessage", async (req, res) => {
 
   // 发送模版消息
   try {
-    const url = 'https://api.weixin.qq.com/cgi-bin/message/template/send'
+    const url = 'http://api.weixin.qq.com/cgi-bin/message/template/send'
     const res = await axios.post(url, {
       touser: openid,
       template_id: templateId,
