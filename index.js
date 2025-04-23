@@ -83,11 +83,9 @@ app.post("/", async (req, res) => {
               .collection("gzhOpenId")
               .doc(userData._id)
               .update({
-                data: {
                   gzhOpenId: FromUserName,
                   isActive: true,
                   updatedAt: db.serverDate(),
-                },
               });
 
             console.log("更新用户结果:", JSON.stringify(updateResult));
@@ -96,11 +94,9 @@ app.post("/", async (req, res) => {
             console.log("没有找到匹配的用户记录，可能需要创建新用户");
 
             const createResult = await db.collection("gzhOpenId").add({
-              data: {
                 unionid: userInfo.unionid,
                 gzhOpenId: FromUserName,
                 isActive: true,
-              }
             });
             console.log("创建新用户结果:", JSON.stringify(createResult));
           }
@@ -131,9 +127,7 @@ app.post("/", async (req, res) => {
             .collection("gzhOpenId")
             .doc(userData._id)
             .update({
-              data: {
                 isActive: false,
-              },
             });
 
           console.log("更新用户状态结果:", JSON.stringify(updateResult));
