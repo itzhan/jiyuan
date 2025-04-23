@@ -7,9 +7,6 @@ console.log("环境变量CLOUD_ENV:", process.env.CLOUD_ENV);
 
 const cloud = tcb.init({
   env: process.env.CLOUD_ENV,
-  // 添加腾讯云认证信息
-  secretId: process.env.TENCENTCLOUD_SECRET_ID,
-  secretKey: process.env.TENCENTCLOUD_SECRET_KEY
 });
 console.log("云环境初始化完成");
 
