@@ -146,6 +146,29 @@ app.post("/", async (req, res) => {
   res.send("success");
 });
 
+
+// 发送模版消息
+app.post("/sendTemplateMessage", async (req, res) => {
+  console.log("收到POST请求，请求体:", JSON.stringify(req.body));
+  const { openid, templateId, templateData } = req.body;
+
+  // 发送模版消息
+  try {
+    const url = 'https://api.weixin.qq.com/cgi-bin/message/template/send'
+    const res = await axios.post(url, {
+      touser: openid,
+      template_id: templateId,
+      data: templateData,
+    });
+
+    console.log("发送模版消息成功:", res.data);
+    return res.data;
+  }
+  catch (error) {
+    console.error("发送模版消息失败，详细信息:", error.message);
+  }
+})
+
 // 添加一个健康检查端点
 app.get("/health", (req, res) => {
   console.log("收到健康检查请求");
