@@ -94,7 +94,7 @@ app.post("/", async (req, res) => {
             console.log("没有找到匹配的用户记录，可能需要创建新用户");
 
             const createResult = await db.collection("gzhOpenId").add({
-                unionid: userInfo.unionid,
+                unionId: userInfo.unionid,
                 gzhOpenId: FromUserName,
                 isActive: true,
             });
