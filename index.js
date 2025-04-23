@@ -8,8 +8,8 @@ console.log("环境变量CLOUD_ENV:", process.env.CLOUD_ENV);
 const cloud = tcb.init({
   env: process.env.CLOUD_ENV,
   // 添加腾讯云认证信息
-  secretId: process.env.TENCENTCLOUD_SECRETID,
-  secretKey: process.env.TENCENTCLOUD_SECRETKEY
+  secretId: process.env.TENCENTCLOUD_SECRET_ID,
+  secretKey: process.env.TENCENTCLOUD_SECRET_KEY
 });
 console.log("云环境初始化完成");
 
@@ -64,24 +64,37 @@ app.post("/", async (req, res) => {
   if (Event === "unsubscribe" || Event === "subscribe") {
     console.log(`处理${Event}事件`);
     
-    // 直接获取用户信息，不需要先获取 access_token
+    // 直接获取用户信息，不需要先获取 access_token(云托管优势)
     const userInfo = await getUserInfo(FromUserName);
-    if (!userInfo || !userInfo.unionid) {
-      console.log("获取用户信息失败或无unionid，返回failed");
-      return res.send("failed");
+    if (!userInfo) {
+      console.error("获取用户信息失败，无法继续处理");
+      res.send("获取用户信息失败");
+      return;
     }
-
     console.log(`成功获取用户信息: ${JSON.stringify(userInfo)}`);
     console.log(`开始查询数据库中的用户，unionid: ${userInfo.unionid}`);
 
     try {
-      const user = await db
+      let user = null;
+      if (userInfo.unionid) {
+        // 关注事件
+        console.log(`开始查询数据库中的用户，unionid: ${userInfo.unionid}`);
+        user = await db
+         .collection("users")
+         .where({
+            unionid: userInfo.unionid,
+          })
+         .get();
+      } else {
+        // 取关事件
+        console.log(`开始查询数据库中的用户，openid: ${userInfo.openid}`);
+        user = await db
         .collection("users")
         .where({
-          unionid: userInfo.unionid,
-        })
+            gzhOpenId: userInfo.openid,
+          })
         .get();
-
+      }
       console.log("查询用户结果:", JSON.stringify(user));
 
       if (user.data && user.data.length > 0) {
