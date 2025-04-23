@@ -155,15 +155,15 @@ app.post("/sendTemplateMessage", async (req, res) => {
   // 发送模版消息
   try {
     const url = 'http://api.weixin.qq.com/cgi-bin/message/template/send'
-    const res = await axios.post(url, {
+    const result = await axios.post(url, {
       touser: openid,
       template_id: templateId,
       data: templateData,
     });
 
-    console.log("发送模版消息成功:", res.data);
+    console.log("发送模版消息成功:", result.data);
     // 告诉调用者发送成功
-    res.status(200).send(res.data); 
+    res.status(200).send(result.data); 
   }
   catch (error) {
     console.error("发送模版消息失败，详细信息:", error.message);
